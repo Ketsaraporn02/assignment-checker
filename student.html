@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <title>สถานะการบ้าน</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      padding: 20px;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #f0fdf4, #e0f7fa, #fefce8);
+      background-size: 400% 400%;
+      animation: gradientBG 15s ease infinite;
+      overflow-x: hidden;
+      position: relative;
+      transition: background 0.5s, color 0.5s;
+    }
+    h2 { font-size: 2rem; margin-bottom: 5px; }
+
+    /* Progress bar */
+    .progress-container { width: 100%; background: #d1fae5; border-radius: 12px; overflow: hidden; margin-bottom: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); position: relative; }
+    .progress-bar { height: 20px; width: 0; text-align: center; color: white; font-size: 0.8rem; transition: width 1s ease, background 1s ease; border-radius:12px; }
+    .progress-bar.glow { box-shadow: 0 0 15px #10b981; }
+
+    /* Progress summary */
+    #progress-summary { font-size: 0.9rem; margin-bottom: 20px; font-weight: 600; color: #065f46; }
+
+    .info-box { padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); margin-bottom: 25px; animation: fadeIn 0.6s; border-left: 10px solid #6ee7b7; transition: transform 0.3s ease, box-shadow 0.3s ease; position: relative; overflow: hidden; }
+    .info-box:hover { transform: translateY(-5px); box-shadow: 0 12px 25px rgba(0,0,0,0.3), 0 0 20px rgba(255,255,255,0.3); }
+    .male { border-left-color: #3b82f6; background: linear-gradient(135deg, #dbeafe, #eff6ff); }
+    .female { border-left-color: #ec4899; background: linear-gradient(135deg, #fce7f3, #fdf2f8); }
+
+    .star-badge { position: absolute; top: 15px; right: 15px; font-size: 28px; animation: pulseStar 1.5s infinite; cursor: default; }
+    .star-badge[data-hint]:hover::after { content: attr(data-hint); position: absolute; top: -35px; right: 0; background: rgba(0,0,0,0.75); color: white; padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; white-space: nowrap; }
+
+    body.dark-mode { background: #111; color: #eee; }
+    body.dark-mode th { background: linear-gradient(135deg, #333, #555); color: #fff; }
+    body.dark-mode tr:nth-child(even) { background: #222; }
+    body.dark-mode .male { background: linear-gradient(135deg, #1e40af, #3b82f6); }
+    body.dark-mode .female { background: linear-gradient(135deg, #9d174d, #ec4899); }
+
+    .theme-toggle { position: fixed; top: 15px; right: 15px; font-size: 24px; cursor: pointer; z-index: 9999; }
+
+    table { width: 100%; border-collapse: separate; border-spacing: 0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); animation: slideUp 0.7s ease; }
+    th, td { padding: 12px 15px; text-align: left; }
+    th { background: linear-gradient(135deg, #a7f3d0, #34d399); color: white; transition: background 0.3s; }
+    th:hover { background: linear-gradient(135deg, #6ee7b7, #059669); }
+    tr:nth-child(even) { background: #f9fdfb; }
+    tr { opacity: 0; transform: translateY(20px); animation: rowFade 0.6s forwards; }
+    tr:hover { background: #ecfdf5; transform: scale(1.01); transition: all 0.2s; position: relative; }
+
+    .status { padding: 5px 10px; border-radius: 12px; font-weight: 700; font-size: 0.9rem; display: inline-block; position: relative; }
+    .done { background: #bbf7d0; color: #166534; box-shadow: 0 0 5px #16a34a; }
+    .late { background: #fed7aa; color: #9a3412; box-shadow: 0 0 5px #f97316; }
+    .missing { background: #fecaca; color: #991b1b; box-shadow: 0 0 5px #b91c1c; animation: blinkMissing 1s infinite alternate; }
+    .status:hover::after { content: attr(data-hint); position: absolute; bottom: 120%; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.75); color: white; padding: 4px 8px; border-radius: 6px; white-space: nowrap; font-size: 0.75rem; }
+
+    @keyframes blinkMissing { 0%{opacity:1;} 50%{opacity:0.3;} 100%{opacity:1;} }
+    @keyframes rowFade { to{opacity:1; transform:translateY(0);} }
+    @keyframes pulseStar { 0%,100%{transform:scale(1);} 50%{transform:scale(1.2);} }
+
+    .sparkle { position: absolute; font-size: 14px; animation: floatUp linear infinite; pointer-events: none; opacity: 0.8; }
+    tr:hover::after { content:'✨'; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:20px; animation:sparkleHover 1s linear infinite; }
+    @keyframes sparkleHover { 0%{transform:translate(-50%,-50%) scale(0.5);} 50%{transform:translate(-50%,-50%) scale(1);} 100%{transform:translate(-50%,-50%) scale(0.5);} }
+
+    .floating-emoji { position: fixed; font-size: 20px; pointer-events: none; animation: emojiFloat 5s linear infinite; }
+
+    @keyframes fadeIn { from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:translateY(0);} }
+    @keyframes slideUp { from{opacity:0;transform:translateY(20px);} to{opacity:1;transform:translateY(0);} }
+    @keyframes gradientBG { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+    @keyframes floatUp { 0%{transform:translateY(100%);opacity:0;} 50%{opacity:1;} 100%{transform:translateY(-20%) rotate(360deg);opacity:0;} }
+    @keyframes emojiFloat { 0%{transform:translateY(100vh);opacity:0;} 25%{opacity:1;} 100%{transform:translateY(-10vh) translateX(100px) rotate(360deg);opacity:0;} }
+    @keyframes fall { to{transform:translateY(110vh) rotate(720deg);opacity:0;} }
+    @keyframes fadeOut { to{opacity:0; transform:translateY(-20px);} }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+</head>
+<body>
+  <div class="theme-toggle" id="theme-toggle">🌙</div>
+  <div id="progress" class="progress-container"><div class="progress-bar" id="progress-bar">0%</div></div>
+  <div id="progress-summary">กำลังโหลดข้อมูล...</div>
+  <div id="result">กำลังโหลด...</div>
+
+<script>
+async function loadCSV(file) {
+  return new Promise(resolve => {
+    Papa.parse(file, { download:true, header:true, complete: results => resolve(results.data) });
+  });
+}
+function getParam(name){ return new URLSearchParams(window.location.search).get(name); }
+function normalizeId(id){ return String(id).trim(); }
+
+(async function () {
+  const studentId = getParam("id");
+  const students = await loadCSV("assignment-checker - Students.csv");
+  const assignments = await loadCSV("assignment-checker - Assignments.csv");
+  const submissions = await loadCSV("assignment-checker - Submissions.csv");
+
+  const student = students.find(s => normalizeId(s["รหัสนักเรียน"]) === studentId);
+  const submission = submissions.find(s => normalizeId(s["รหัสนักเรียน"]) === studentId);
+
+  if (!student) { document.getElementById("result").innerHTML="<p>ไม่พบนักเรียน</p>"; return; }
+
+  assignments.sort((a,b)=>(+a["ครั้งที่"]||0)-(+b["ครั้งที่"]||0));
+
+  let genderClass="", genderEmoji="🎓";
+  if(student["ชื่อ"].startsWith("เด็กชาย")){ genderClass="male"; genderEmoji="👦"; }
+  else if(student["ชื่อ"].startsWith("เด็กหญิง")){ genderClass="female"; genderEmoji="👧"; }
+
+  let html=`<div class="info-box ${genderClass}"><h2>${genderEmoji} ${student["ชื่อ"]} ${student["นามสกุล"]}</h2>
+    <p><b>รหัสนักเรียน:</b> ${student["รหัสนักเรียน"]}</p>
+    <p><b>ชั้น:</b> ${student["ชั้น"]} <b>เลขที่:</b> ${student["เลขที่"]}</p>
+    <p><b>เทอม:</b> ${student["เทอม"]}</p>
+    <p><b>วันที่อัปเดต:</b> ${student["วันที่อัปเดต"]||"-"}</p></div>`;
+
+  html+=`<table><tr><th>ครั้งที่</th><th>ชื่องาน</th><th>รายละเอียด</th><th>เทอม</th><th>วันที่อัปเดต</th><th>สถานะ</th></tr>`;
+
+  let doneCount=0;
+  assignments.forEach((a,i)=>{
+    const idx=a["ครั้งที่"];
+    const status=submission ? (submission[idx]||"ยังไม่ส่ง") : "ยังไม่ส่ง";
+    const updated=student["วันที่อัปเดต"]||"-";
+    let cls="missing", hint="ยังไม่ส่ง อย่าลืมนะ!";
+    if(String(status).includes("ส่งแล้ว") || String(status).includes("ช้า")) { cls = String(status).includes("ช้า")?"late":"done"; hint = cls==="done"?"เยี่ยม! ส่งแล้ว":"ส่งช้า คราวหน้ารีบกว่านี้"; doneCount++; }
+    html+=`<tr style="animation-delay:${i*0.1}s"><td>${idx}</td><td>${a["ชื่องาน"]||""}</td><td>${a["รายละเอียด"]||""}</td><td>${a["เทอม"]||""}</td><td>${updated}</td><td><span class="status ${cls}" data-hint="${hint}">${status}</span></td></tr>`;
+  });
+
+  html+="</table>";
+  document.getElementById("result").innerHTML=html;
+
+  const progress=Math.round((doneCount/assignments.length)*100);
+  const bar=document.getElementById("progress-bar");
+  bar.style.width=progress+"%";
+  bar.textContent=progress+"%";
+  bar.style.background=`linear-gradient(90deg, #34d399 ${progress}%, #10b981 ${progress}%)`;
+  bar.classList.add("glow");
+  document.getElementById("progress-summary").textContent=`ทำเสร็จแล้ว ${doneCount} จาก ${assignments.length} งาน (${progress}%)`;
+
+  const box=document.querySelector(".info-box");
+
+  // badges เงียบ ไม่มีเสียง
+  if(progress>=50 && !document.querySelector(".star-badge[data-hint='สำเร็จ 50%!']")){
+    const star50=document.createElement("div"); star50.className="star-badge"; star50.textContent="🥈"; star50.dataset.hint="สำเร็จ 50%!"; box.appendChild(star50);
+  }
+  if(progress>=80 && !document.querySelector(".star-badge[data-hint='สำเร็จ 80%!']")){
+    const star80=document.createElement("div"); star80.className="star-badge"; star80.textContent="🥇"; star80.dataset.hint="สำเร็จ 80%!"; box.appendChild(star80);
+  }
+  if(progress===100 && !document.querySelector(".star-badge[data-hint='ครบ 100%! 🎉']")){
+    const star100=document.createElement("div"); star100.className="star-badge"; star100.textContent="🌟"; star100.dataset.hint="ครบ 100%! 🎉"; box.appendChild(star100);
+
+    for(let i=0;i<50;i++){
+      const e=document.createElement('div'); e.textContent='🎉'; e.style.position='fixed'; e.style.left=Math.random()*100+'vw'; e.style.top='-10px';
+      e.style.fontSize=15+Math.random()*25+'px'; e.style.animation=`fall ${3+Math.random()*3}s linear forwards`; document.body.appendChild(e); setTimeout(()=>e.remove(),6000);
+    }
+    const messages=["เยี่ยมมาก!","สุดยอด!","ทำได้ดีมาก!","เก่งมาก!"];
+    const msg=document.createElement("div"); msg.textContent=messages[Math.floor(Math.random()*messages.length)];
+    msg.style.position="fixed"; msg.style.top="50%"; msg.style.left="50%"; msg.style.transform="translate(-50%,-50%)"; msg.style.fontSize="2rem";
+    msg.style.background="#10b981"; msg.style.color="#fff"; msg.style.padding="15px 25px"; msg.style.borderRadius="12px"; msg.style.zIndex=9999;
+    msg.style.animation="fadeIn 0.5s, fadeOut 0.5s 2.5s forwards"; document.body.appendChild(msg); setTimeout(()=>msg.remove(),3000);
+  }
+
+  const emojis=['✨','🌟','💫','⭐','🎉'];
+  for(let i=0;i<15;i++){
+    const span=document.createElement('span'); span.textContent=emojis[Math.floor(Math.random()*emojis.length)]; span.className='sparkle';
+    span.style.left=Math.random()*90+'%'; span.style.top=Math.random()*90+'%'; span.style.fontSize=10+Math.random()*20+'px';
+    span.style.animationDuration=5+Math.random()*7+'s'; box.appendChild(span);
+  }
+
+  const pageEmojis=['🎉','✨','💫','🌟','🥳'];
+  for(let i=0;i<10;i++){
+    const e=document.createElement('div'); e.className='floating-emoji'; e.textContent=pageEmojis[Math.floor(Math.random()*pageEmojis.length)];
+    e.style.left=Math.random()*90+'vw'; e.style.animationDuration=4+Math.random()*6+'s'; e.style.fontSize=15+Math.random()*20+'px'; document.body.appendChild(e);
+  }
+
+  const toggle=document.getElementById("theme-toggle");
+  toggle.addEventListener("click",()=>{document.body.classList.toggle("dark-mode"); toggle.textContent=document.body.classList.contains("dark-mode")?"☀️":"🌙";});
+
+})();
+</script>
+</body>
+</html>
